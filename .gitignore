@@ -1,0 +1,4 @@
+refs/*
+compiled-resources/*
+*~
+_darcs/*
