@@ -2,7 +2,8 @@
 
 (defparameter* (bible-version-files list)
     '((:kjv . "bibles/EnglishKJBible.xml")
-			(:net . "bibles/EnglishNETBible.xml")
+      ;; Commenting out until we have a more solid understanding of legal use.
+			;; (:net . "bibles/EnglishNETBible.xml")
 			(:tyndale-1537 . "bibles/EnglishTyndale1537Bible.xml")
 			(:darby-bible . "bibles/EnglishDarbyBible.xml")))
 
@@ -11,7 +12,9 @@
   `(let ((document (parse-file ,source))) ,@body))
 
 (defun* (bcv-book-to-num -> fixnum) ((book symbol))
-  (1+ (position book bcv-names)))
+  (aif (the (or fixnum null) (position book bcv-names))
+    (1+ it)
+    0))
 
 (defun* (num-to-bcv-book -> (or symbol null)) ((num fixnum))
   (aref bcv-names (1- num)))
@@ -123,7 +126,8 @@
                           &optional ((chapter (or fixnum null)) nil))
                   (if chapter
                       (fetch-bible-chapter document query chapter)
-                      (mapcar (lambda (nodes) (mapcar λ(pl:text _) (cdr nodes)))
+                      (mapcar (lambda (nodes) (mapcar λ(jweb.framework::straight-text _);; (pl:text _)
+                                                      (cdr nodes)))
 	                            (etypecase query
 		                            (fixnum (fetch-bible-book document query))
 		                            (cons (fetch-nodes document query)))))))))))
@@ -159,7 +163,9 @@
                        #'t:flatten
                        (t:map #'pl:children)
                        #'t:flatten
-                       (t:map #'pl:text))
+                       ;; (t:map #'pl:text)
+                       (t:map #'jweb.framework::straight-text)
+                       )
                #'t:cons
                (get-els document)))
 

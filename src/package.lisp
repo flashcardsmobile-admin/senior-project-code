@@ -4,6 +4,7 @@
   (:import-from :ningle #:*session*)
   (:import-from :modf #:modf)
   (:import-from :lack.util.writer-stream #:make-writer-stream)
+  (:import-from :cl-ppcre #:substitute)
   (:import-from :parenscript
 		            #:ps
 		            #:ps-inline
@@ -43,6 +44,7 @@
            #:params
            #:get-req-item
            #:comptime
+           #:dlambda
            #:rdr-to
            #:bs
            ;; Reexport things that ought to be universal
@@ -76,6 +78,7 @@
                 #:awhen
                 #:aif
                 #:comptime
+                #:dlambda
                 #:it)
   (:export #:defcategories
            #:defresources
@@ -101,7 +104,8 @@
                           :abort :type)
   (:local-nicknames (#:pl #:plump)
 		                (#:t #:transducers)
-                    (#:ref-tree #:jweb.ref-tree))
+                    (#:ref-tree #:jweb.ref-tree)
+                    (#:m #:jweb.model))
   (:import-from :jweb.framework
                 #:awhen
                 #:aif
@@ -138,9 +142,23 @@
                     (#:ref-tree #:jweb.ref-tree))
   (:import-from #:jweb.framework #:bs)
   (:import-from #:defstar #:nlet)
+  (:shadowing-import-from "AP5" :compile :defmethod :defun :loop :abort :type)
+  (:import-from :ap5
+                #:s.t.
+                #:any
+                #:e
+                #:??
+                #:theonly
+                #:atomic)
   (:import-from #:ps
                 #:ps
+                #:ps-compile-file
+		            #:lisp
                 #:chain))
+
+(defpackage :jweb.notes
+  (:use :cl :defstar :ap5 :modf)
+  (:shadowing-import-from "AP5" :compile :defmethod :defun :loop :abort :type))
 
 (defpackage :jweb
   (:use :cl :trivial-types

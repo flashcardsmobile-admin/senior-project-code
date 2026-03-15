@@ -49,27 +49,33 @@
 (defun render-scrip-refs (exp)
   (labels ((render-ref (ref)
              (destructuring-bind (book chapter verse &rest _) ref
-               (let ((href (str:concat "/bible/" "KJV"
-                                       "/" (write-to-string (jweb.bibles::bcv-book-to-num (intern book "KEYWORD")))
-                                       "/" chapter)))
-                 (spinneret:with-html
-                   (:a :href href
-                       :attrs (get-attrs exp)
-                       (mapcar #'render (get-children exp))))))))
+               (aif (jweb.bibles::bcv-book-to-num (intern book "KEYWORD"))
+                    (let ((href (str:concat "/bible/" "KJV"
+                                            "/" (write-to-string it)
+                                            "/" chapter)))
+                      (spinneret:with-html
+                          (:a :href href
+                              :attrs (get-attrs exp)
+                              (mapcar #'render (get-children exp)))))
+                    (spinneret:with-html
+                        (:p (mapcar #'render (get-children exp))))))))
     (let ((refs (cdr (assoc :refs (cdr exp)))))
       (typecase (car refs)
         (list (mapcar #'render-ref refs))
         (t (render-ref refs))))))
 
 (defun render-tag (exp)
-  (handler-case
-      (spinneret:with-html
-        (:tag :name (intern (get-name exp) "KEYWORD")
-              :attrs (get-attrs exp)
-              (mapcar #'render (get-children exp))))
-    (spinneret:no-such-tag ()
-      (spinneret:with-html (:span :attrs (get-attrs exp)
-                        (mapcar #'render (get-children exp)))))))
+  (let ((tag-name (get-name exp)))
+    (handler-case
+        (spinneret:with-html
+            (:tag :name tag-name
+                  :attrs (get-attrs exp)
+                  (mapcar #'render (get-children exp))))
+      (spinneret:no-such-tag ()
+        (let ((spinneret::*unvalidated-attribute-prefixes* '("thml-")))
+          (spinneret:with-html (:tag :name (str:concat "thml-" tag-name)
+                                     :attrs (get-attrs exp)
+                                     (mapcar #'render (get-children exp)))))))))
 
 (defun* render ((exp (or string list)))
   (typecase exp

@@ -12,7 +12,10 @@
             (destructuring-bind (resource &key category) resource
               (++ pre-resource resource)
               (when category
-                (++ pre-resource-category resource category))))
+                (etypecase category
+                  (symbol (++ pre-resource-category resource category))
+                  (list (loop for c in category
+                              do (++ pre-resource-category resource category)))))))
           resources))
 
 (defun add-scrip-ref (book chapter-start verse-start chapter-end verse-end filename)
@@ -24,32 +27,6 @@
       verse-end
       filename))
 
-(defun* (add-cur-section -> null) (current-section source-file &optional ((prior-section (or null pathname)) nil))
-  (atomic
-   (++ section current-section)
-   (++ resource-sections source-file current-section)
-   (when prior-section
-     (++ section-parent current-section prior-section))))
-
-(defun find-and-set-resource-category (pre-resource resource)
-  (let ((category (theonly category
-                           s.t. (pre-resource-category pre-resource
-                                                       category))))
-  (++ resource-category resource category)))
-
-(defun set-section-title (section header)
-  (++ section-title section header))
-
-(defun create-resource (resource title)
-  (++ resource resource)
-  (++ resource-title resource title))
-
-(defun set-resource-prim-section (resource section)
-  (++ resource-prim-section resource section))
-
-(defun map-over-pre-resources (fun)
-  (loop for (resource) s.t. (pre-resource resource)
-        do (atomic (funcall fun resource))))
 
 (defun get-section-title (section)
   (any (title) s.t. (section-title section title)))
@@ -61,9 +38,7 @@
                             (resource-title resource title)))))
 
 (defun get-section-parent (section)
-  (any (parent)
-       s.t. (section-parent section parent)
-       ifnone nil))
+  )
 
 (defun get-section-parent-title (cur)
   (any (parent title)
@@ -89,7 +64,7 @@
                                                (mapcar #'cdr group))))
                                 (t:map (lambda (group)
                                          (multiple-value-bind (resource title)
-                                             (theonly resource title
+                                             (any resource title
                                                       s.t. (and (resource-sections resource
                                                                                    (car group))
                                                                 (resource-title resource
@@ -117,15 +92,15 @@
   )
 
 (defun get-section-parents (section &optional accum)
-  (aif (theonly parent
-                s.t. (section-parent section parent)
-                ifnone nil)
-    (get-section-parents it (cons section accum))
-    (cons section accum)))
+  (aif (any parent
+            s.t. (section-parent section parent)
+            ifnone nil)
+       (get-section-parents it (cons section accum))
+       (cons section accum)))
 
 (defun get-obj-title (obj)
   (cond ((?? section obj)
-         (theonly title s.t. (section-title obj title)))
+         (any title s.t. (section-title obj title)))
         ((?? resource obj)
          (resource-title obj))
         ((?? category obj)
@@ -133,11 +108,11 @@
         (t obj)))
 
 (defun get-section-category (section)
-  (theonly category s.t. (e(resource) (and (resource-sections resource section)
+  (any category s.t. (e(resource) (and (resource-sections resource section)
                                            (resource-category resource category)))))
 
 (defun get-section-resource (section)
-  (theonly resource s.t. (resource-sections resource section)))
+  (any resource s.t. (resource-sections resource section)))
 
 (defun expand-section-parents (section)
   (let ((section-titles (t:transduce (t:comp (t:map

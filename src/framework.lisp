@@ -10,9 +10,6 @@
 (defun rl ()
   (ql:quickload :jweb))
 
-;; Make Spinneret work with HTMX
-(pushnew "hx-" *unvalidated-attribute-prefixes* :test #'equal)
-
 (defmacro req-headers ()
   `(lack.request:request-headers ningle:*request*))
 
@@ -22,25 +19,25 @@
 (defmacro res-status ()
   `(lack.response:response-status ningle:*response*))
 
-(declaim (inline htmx-request-p))
-(defun htmx-request-p ()
-  (gethash "HX-Request" (req-headers)))
+;; (declaim (inline htmx-request-p))
+;; (defun htmx-request-p ()
+;;   (gethash "HX-Request" (req-headers)))
 
 (defun rdr-to (url &key (code 303))
   (setf (res-headers)
 	      (append (res-headers)
-		            (list :Location url)))
+		            (list :location url)))
   (setf (res-status) code)
   "")
 
 (defmacro cur-user ()
-  `(gethash "user" *session*))
+  `(gethash "user" ningle:*session*))
 
 (defun auth-or-bail (fun &optional bail)
   λ(cond
      ((cur-user) (apply fun _@))
      (bail (apply bail _@))
-     (t '(401))))
+     (t (rdr-to "/" :code 401))))
 
 (defun apply-middleware (function current-middleware)
   (typecase current-middleware
@@ -61,7 +58,7 @@
 		                  (declare (ignorable params))
 		                  ,@body))
 	           ,(if middleware
-		              `(apply-middleware #'self middleware)
+		              `(apply-middleware #'self (list ,@middleware))
 		              `#'self)))))
 
 ;; Define a route that uses finite-state logic.
@@ -179,16 +176,16 @@
 	           (setf (getprop ,b k) (getprop ,a k))))))
 
 ;;; Signals for Parenscript
-(defparameter signals
-  (ps (defun make-signal (value)
-	      (let ((event-id (chain crypto (random-u-u-i-d))))
-	        (ps:create
-           :get (lambda () value)
-           :set (lambda (v)
-		              (setf value v)
-		              ($ document (trigger event-id)))
-	         :sub (lambda (f)
-		              ($ document (on event-id f [value]))))))))
+;; (defparameter signals
+;;   (ps (defun make-signal (value)
+;; 	      (let ((event-id (chain crypto (random-u-u-i-d))))
+;; 	        (ps:create
+;;            :get (lambda () value)
+;;            :set (lambda (v)
+;; 		              (setf value v)
+;; 		              ($ document (trigger event-id)))
+;; 	         :sub (lambda (f)
+;; 		              ($ document (on event-id f [value]))))))))
 
 ;;; Custom attrs
 (defmacro custom-attrs (&body additional-attrs)
@@ -207,15 +204,15 @@
 
 ;;; Panes
 (defparameter pane-style (css-lite:css
-			                     (("html" "body")
-			                      ((:margin 0)
-			                       (:padding 0)
-			                       (:height "100%")))
-			                     ((".pane")
-			                      ((:border-style "solid")
-			                       (:height "100%")
-			                       (:width "100%")
-			                       (:box-sizing "border-box")))))
+			                    (("html" "body")
+			                     ((:margin 0)
+			                      (:padding 0)
+			                      (:height "100%")))
+			                    ((".pane")
+			                     ((:border-style "solid")
+			                      (:height "100%")
+			                      (:width "100%")
+			                      (:box-sizing "border-box")))))
 
 (deftag pane (content attrs &key)
   `(:div :class (bs pane)
@@ -307,8 +304,8 @@
 ;; 	(chain htmx (process (aref (chain content) 0)))))))
 
 ;; An easier way to use signals
-(defpsmacro use-signal (the-signal &body body)
-  `(chain ,the-signal (:sub (lambda (curr-state) ,@body))))
+;; (defpsmacro use-signal (the-signal &body body)
+;;   `(chain ,the-signal (:sub (lambda (curr-state) ,@body))))
 
 ;;; Database macros
 ;; ;; Create a pandoric closure with a database connection set.
@@ -542,45 +539,123 @@
 
 (defparameter mobile-dropdown
   (ps
-    (chain document
-	         (query-selector-all ".navbar-toggler")
-	         (for-each (lambda (toggler)
-		                   (chain toggler (add-event-listener "click"
-							                                            (lambda ()
-							                                              (let ((target (chain document
-										                                                             (query-selector
-										                                                              (chain this
-											                                                                   (get-attribute "data-bs-target"))))))
-							                                                (when target
-								                                                (chain target
-								                                                       class-list
-								                                                       (toggle "show")))
-							                                                undefined))))
-		                   undefined)))))
+   (chain document
+	        (query-selector-all ".navbar-toggler")
+	        (for-each (lambda (toggler)
+		                  (chain toggler (add-event-listener "click"
+							                                           (lambda ()
+							                                             (let ((target (chain document
+										                                                            (query-selector
+										                                                             (chain this
+											                                                                  (get-attribute "data-bs-target"))))))
+							                                               (when target
+								                                               (chain target
+								                                                      class-list
+								                                                      (toggle "show")))
+							                                               undefined))))
+		                  undefined)))))
 
-(defparameter dropdown-setter
-  (ps (chain document (add-event-listener "click"
-					                                (lambda (e)
-					                                  (let ((toggle (chain e target (closest ".dropdown-toggle"))))
-					                                    (if toggle
-						                                      (let ((menu (getprop toggle 'next-element-sibling)))
-						                                        (chain menu
-							                                             class-list
-							                                             (toggle "show"))
-						                                        (chain toggle
-							                                             (set-attribute "aria-expanded"
-									                                                        (chain menu class-list contains "show"))))
-						                                      (chain document
-							                                           (query-selector-all ".dropdown-menu.show")
-							                                           (for-each (lambda (menu)
-								                                                     (chain menu
-									                                                          class-list
-									                                                          (remove "show"))
-								                                                     (chain menu
-									                                                          previous-element-sibling
-									                                                          (set-attribute "aria-expanded"
-											                                                                     "false"))))))
-					                                    undefined))))))
+;; (defparameter dropdown-setter
+;;   (ps (chain document (add-event-listener "click"
+;; 					                                (lambda (e)
+;; 					                                  (let ((toggle (chain e target (closest ".dropdown-toggle"))))
+;; 					                                    (if toggle
+;; 						                                      (let ((menu (getprop toggle 'next-element-sibling)))
+;; 						                                        (chain menu
+;; 							                                             class-list
+;; 							                                             (toggle "show"))
+;; 						                                        (chain toggle
+;; 							                                             (set-attribute "aria-expanded"
+;; 									                                                        (chain menu class-list contains "show"))))
+;; 						                                      (chain document
+;; 							                                           (query-selector-all ".dropdown-menu.show")
+;; 							                                           (for-each (lambda (menu)
+;; 								                                                     (chain menu
+;; 									                                                          class-list
+;; 									                                                          (remove "show"))
+;; 								                                                     (chain menu
+;; 									                                                          previous-element-sibling
+;; 									                                                          (set-attribute "aria-expanded"
+;; 											                                                                     "false"))))))
+;; 					                                    undefined))))))
+
+(defpsmacro setup-custom-el (name &optional (subclass '-h-t-m-l-element))
+  `(progn (defun ,name ()
+            (chain -reflect (construct ,subclass [] ,name)))
+          (setf (@ ,name prototype) (chain -object (create (@ ,subclass prototype))))
+          (setf (@ ,name prototype constructor) ,name)))
+
+
+;; Adapted from something Grok gave me.
+(defparameter filter-style "/* Turn off default markers so we can take full control (optional but recommended) */
+ol[is=\"filter-ol\"] {
+  list-style: none;
+  counter-reset: item;
+  padding-left: 2.8em;          /* adjust to taste – room for your numbers */
+  margin: 0;
+}
+
+ol[is=\"filter-ol\"] > li {
+  counter-increment: item;
+  position: relative;
+}
+
+/* Our custom number (replaces the native ::marker) */
+ol[is=\"filter-ol\"] > li::before {
+  content: counter(item) \".\";
+  position: absolute;
+  left: -2.2em;
+  width: 2em;
+  text-align: right;
+  color: #666;                  /* or whatever style you have */
+  font-weight: bold;
+}
+
+/* The key rule for filter/hidden items */
+ol[is=\"filter-ol\"] > li.filter-out {
+  visibility: hidden;            /* ← disappears visually but still increments counter */
+  height: 0px;
+}
+ul[is=\"filter-ul\"] > li.filter-out {
+display: none;
+}")
+
+(defparameter filter-list
+  (ps
+   (let* ((keyup-callback
+            (lambda (root)
+              (lambda (e)
+                (let* ((input (@ e target))
+                       (search (chain input value (to-upper-case))))
+                  (dolist (li (chain root (query-selector-all ":scope > li")))
+                    (if (> (chain li text-content
+                                  (to-upper-case)
+                                  (index-of search))
+                           -1)
+                        (chain li class-list (remove "filter-out"))
+                        (chain li class-list (add "filter-out"))))))))
+          (con-callback
+             (lambda ()
+               (let* ((searchbar (with-html (:label "Search: " (:input))))
+                      (root (@ searchbar first-element-child)))
+                 (chain root (add-event-listener "keyup" (keyup-callback this)))
+                 (chain this (prepend searchbar))
+                 null))))
+      (setup-custom-el filter-ul -h-t-m-l-u-list-element)
+      (setup-custom-el filter-ol -h-t-m-l-o-list-element)
+      (setf (chain filter-ul prototype connected-callback) con-callback)
+      (setf (chain filter-ol prototype connected-callback) con-callback)
+      (chain custom-elements (define "filter-ul" filter-ul (ps:create extends "ul")))
+      (chain custom-elements (define "filter-ol" filter-ol (ps:create extends "ol"))))))
+
+(defparameter win-box
+  (ps:ps
+   (let* ((con-callback (lambda ()
+                          (ps:new (-win-box (or (ps:@ this dataset title) "New Window")
+                                            (ps:create :root this))))))
+     (setup-custom-el win-box)
+     (setf (ps:@ win-box prototype connected-callback) con-callback)
+     (ps:chain custom-elements (define "win-box" win-box)))))
 
 (defmacro wrap-html-stream (&body body)
   `(lambda (responder)
@@ -591,54 +666,81 @@
 
 (defmacro with-html-stream (&body body)
   `(wrap-html-stream
-     (with-html ,@body)))
+    (with-html ,@body)))
 
 (defparameter main-style
   (css-lite:css
-    ((body)
-     (font-family "Garamond, Baskerville, Baskerville Old Face, Hoefler Text, Times New Roman, serif"))
-    ((".verses li:hover")
-     (:background-color "darkgray"))))
+   ((body)
+    (font-family "Garamond, Baskerville, Baskerville Old Face, Hoefler Text, Times New Roman, serif"))
+   ((".verses li:hover")
+    (:background-color "darkgray"))))
 
 (defparameter dropdown-style
   (css-lite:css
-    ((".dropdown-menu")
-     (:display "none"
-      :position "absolute"
-      :top "100%"
-      :left "0"))
-    ((".dropdown-menu.show")
-     (display "block"))))
+   ((".dropdown-menu")
+    (:display "none"
+     :position "absolute"
+     :top "100%"
+     :left "0"))
+   ((".dropdown-menu.show")
+    (display "block"))))
 
 ;;; HTML-based macros
 ;; Create full HTML pages.
-(defmacro with-page ((&key (title "Charito") css js nav-items custom-attrs) &body body)
+(defmacro with-page ((&key (title "Charito") css js nav-items custom-attrs hide-banner) &body body)
   `(with-html-stream
 	   (:doctype)
-	   (:title ,title)
-	   (:meta :name "viewport" :content "width=device-width, initial-scale=1")
-	   (:link :rel "stylesheet" :href "/static/bootstrap.min.css")
-	   (:style (:raw ,pane-style
-			             ,dropdown-style
-			             ,main-style
-                   "@view-transition { navigation: auto; }"))
-	   ,(when css
-	      `(:style (:raw ,css)))
-	   (:script :src "/static/htmx.min.js")
-	   ;; (:script (:raw signals))
-	   (:script (:raw ,dropdown-setter))
-	   ,(when custom-attrs
-	      `(:script (:raw (custom-attrs ,custom-attrs))))
-	   ,(when js
-	      `(:script (:raw ,js)))
-	   (navbar :brand "Charito" :brand-link (build-link "/")
-		         (nav-item :active t :link (build-link "/") :text "Home")
-		         (if (cur-user)
-		             (nav-item :link "/logout" :text "Log Out")
-		             (nav-item :link "/login" :text "Log In"))
-			       ,@nav-items)
-	   (:script (:raw ,mobile-dropdown))
-	   ,@body))
+     (:html :data-bs-theme (if (and (cur-user) (ap5::theonly mode ap5::s.t.
+                                                             (jweb.model::user-dark-mode (cur-user) mode)))
+                               "dark"
+                               "light")
+            (:meta :charset "utf-8")
+	          (:title ,title)
+	          (:meta :name "viewport" :content "width=device-width, initial-scale=1")
+	          (:link :rel "stylesheet" :href "/static/bootstrap.min.css")
+	          (:style (:raw ,pane-style
+			                    ,dropdown-style
+			                    ,main-style
+                          ,filter-style
+                          "@view-transition { navigation: auto; }"))
+	          ,(when css
+	             `(:style (:raw ,css)))
+	          ;; (:script :src "/static/htmx.min.js")
+	          (:script (:raw ,filter-list))
+	          ,(when custom-attrs
+	             `(:script (:raw (custom-attrs ,custom-attrs))))
+	          ,(when js
+	             `(:script (:raw ,js)))
+            (:iframe :hidden t
+                     :name "htmz"
+                     :onload (:raw (ps:ps (set-timeout
+                                           (lambda ()
+                                             (let ((el (ps:chain document (query-selector
+                                                                           (ps:or (ps:@ content-window location hash)
+                                                                                  nil)))))
+                                               (ps:when el
+                                                 (ps:chain el replace-with
+                                                           (apply el (ps:@ content-document
+                                                                           body
+                                                                           child-nodes)))
+                                                 (setf src "about:blank"))
+                                                 (return)))))))
+            ,(unless hide-banner
+               `(progn
+	                (navbar :brand "Charito" :brand-link (build-link "/")
+		                      (nav-item :active t :link (build-link "/") :text "Home")
+		                      (if (cur-user)
+		                          (progn (nav-item :link "/settings" :text "Settings")
+                                     (:li :class (bs nav-item)
+                                          (:form :method "POST" :action "/logout"
+	                                               (:input :type "submit"
+                                                         :class (bs nav-link)
+                                                         :value "Log Out"))))
+		                          (progn (nav-item :link "/login" :text "Log In")
+                                     (nav-item :link "/register" :text "Register")))
+			                    ,@nav-items)
+	                (:script (:raw ,mobile-dropdown))))
+	          ,@body)))
 
 (defun* (make-id-string -> string) ((name string))
   (str:concat "#" name))
@@ -665,7 +767,57 @@
                (when curr-instance
                  (clack:stop curr-instance)
                  (setf curr-instance nil))))
+      (init-html-els)
       (dlambda
        (:start (&key (port port) (server server))
                (srv-start port server))
        (:stop () (srv-stop))))))
+
+(defun init-html-els ()
+  "Consider removing since it doesn't seem to have an effect."
+  (with-html
+      (:thml-div1
+       (:thml-div2
+        (:thml-div3
+         (:thml-pb)
+         (:thml-h1)
+         (:thml-h2)
+         (:thml-h3)
+         (:thml-h4)
+         (:thml-h5)
+         (:thml-h6)
+         (:thml-argument)
+         (:thml-scripCom)
+         (:thml-scripture)
+         (:thml-scripContext)
+         (:thml-sync)
+         (:thml-note)
+         (:thml-foreign)
+         (:thml-attr)
+         (:thml-unclear)
+         (:thml-citation)
+         (:thml-name)
+         (:thml-date)
+         (:thml-verse)
+         (:thml-insertIndex)
+         (:thml-electronicEdInfo)
+         (:thml-authorID)
+         (:thml-workID)
+         (:thml-versionID)
+         (:thml-bkgID)
+         (:thml-DC)
+         (:thml-l)
+         (:thml-hymn)
+         (:thml-meter)
+         (:thml-author)
+         (:thml-tune)
+         (:thml-composer)
+         (:thml-incipit)
+         (:thml-music)
+         (:thml-index)
+         (:thml-glossary)
+         (:thml-term)
+         (:thml-def)
+         (:thml-added)
+         (:thml-deleted)
+         (:thml-p))))))

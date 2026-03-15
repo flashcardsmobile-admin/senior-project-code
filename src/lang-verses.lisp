@@ -45,6 +45,12 @@
                                                       verse))))
                          (t:map #'pl:child-elements)
                          #'t:flatten
+                         (t:map #'pl:child-elements)
+                         #'t:flatten
+                         (t:map (lambda (el)
+                                  (if (string= (pl:tag-name el) "app")
+                                      (car (pl:get-elements-by-tag-name el "w"))
+                                      el)))
                          (t:map #'pl:text)
                          (t:intersperse " ")
                          #'t:flatten)
@@ -53,3 +59,28 @@
 
 (defun* (xml-id -> string) ((el pl:element))
   (gethash "xml:id" (pl:attributes el) ""))
+
+(defun* (hebrew-book -> (vector pl:node)) ((book pathname))
+  (pl:child-elements (nth-el (nth-el (nth-el (pl:parse book) 0) 1) 0)))
+
+(defun* (hebrew-verse -> string) ((book symbol) (chapter fixnum) (verse fixnum))
+  (*let ((book-num fixnum (bcv-book-to-num book))
+         (book-file pathname (jweb.bibles::num-to-tnch-file book-num)))
+    (t:transduce (t:comp
+                  (t:filter (fn+ (fn~ #'string= "c") #'pl:tag-name))
+                  (t:filter (fn+ (fn~ #'= chapter)
+                                 #'parse-integer
+                                 (fn~r #'pl:attribute "n")))
+                  (t:map #'pl:children)
+                  #'t:flatten
+                  (t:filter #'pl:element-p)
+                  (t:filter (fn+ (fn~ #'string= "v") #'pl:tag-name))
+                  (t:filter (fn+ (fn~ #'= verse)
+                                 #'parse-integer
+                                 (fn~r #'pl:attribute "n")))
+                  (t:map #'pl:children)
+                  #'t:flatten
+                  (t:map #'pl:text)
+                  #'t:flatten)
+                 #'t:string
+                 (hebrew-book book-file))))

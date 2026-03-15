@@ -73,4 +73,6 @@
   (#P"npnf213.xml"
    :category post-nicene-fathers)
   (#P"npnf214.xml"
-   :category post-nicene-fathers))
+   :category post-nicene-fathers)
+  (#P"institutes.xml"
+   :category reformers))

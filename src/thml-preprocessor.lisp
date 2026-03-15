@@ -15,14 +15,16 @@
 ;;                                     compiled-file)
 ;;                          (resource-sections source-file compiled-file))))
 
-(atomic (defcategories '((commentary . "Commentary")
-                         (ante-nicene-fathers . "Ante-Nicene Fathers")
-                         (post-nicene-fathers . "Post-Nicene Fathers")))
-        (defresources (comptime
-                        (with-open-file (s (asdf:system-relative-pathname
-                                            :jweb
-                                            "src/resources.lisp"))
-                          (read s)))))
+(defun define-standard-docs ()
+  (atomic (defcategories '((commentary . "Commentary")
+                           (ante-nicene-fathers . "Ante-Nicene Fathers")
+                           (post-nicene-fathers . "Post-Nicene Fathers")
+                           (reformers . "Reformers")))
+          (defresources (comptime
+                         (with-open-file (s (asdf:system-relative-pathname
+                                             :jweb
+                                             "src/resources.lisp"))
+                           (read s))))))
 
 (defparameter* (thml-options thml-options) (make-thml-options))
 
@@ -31,6 +33,10 @@
 (defparameter* (source-file pathname) #P"")
 
 (defparameter* (current-header string) "")
+
+(defparameter* (base-url string) "https://ccel.org/ccel/")
+
+(defparameter* (current-url string) base-url)
 
 (defun* get-document ((source-name pathname))
   (pl:parse (alexandria:read-file-into-string source-name)))
@@ -46,9 +52,20 @@
   (or (get-tag document "ThML.head")
       (error "ThML.head is missing!")))
 
+(defun* (author-id -> pl:node) ((document pl:node))
+  (get-tag document "authorID"))
+
+(defun* (book-id -> pl:node) ((document pl:node))
+  (get-tag document "bookID"))
+
 (defun* (get-body -> pl:node) ((document pl:node))
   (or (get-tag document "ThML.body")
       (error "ThML.body is missing!")))
+
+(defun* (book-base-url -> string) ((document pl:node))
+  (str:concat base-url
+              (pl:text (author-id document)) "/"
+              (pl:text (book-id document)) "/"))
 
 (defun* (process-scrip-ref -> list) ((node pl:node))
   (aif (gethash "parsed" (pl:attributes node))
@@ -90,16 +107,24 @@
 
 (defun* (node-recurse -> (or list string)) ((node pl:node) (i fixnum))
   (cond ((pl:comment-p node) '())
-        ((pl:text-node-p node)
-         (pl:text node))
+        ((pl:text-node-p node) (jweb.framework::straight-text node))
         ((str:starts-with-p "DIV" (str:upcase (pl:tag-name node)))
          (let ((prior-section current-section)
                (current-section (new-filename i))
                (current-header ""))
            (atomic
             (add-cur-section current-section source-file prior-section)
-            (break-sections node)
-            (set-section-title current-section current-header))
+            (let ((current-url (if (cl-ppcre:scan
+                                    "^DIV[123]"
+                                    (str:upcase (pl:tag-name node)))
+                                   (str:concat
+                                    base-url "."
+                                    (gethash "id" (pl:attributes node))
+                                    ".html")
+                                   current-url)))
+              (++ m::section-ccel current-section current-url)
+              (break-sections node))
+            (++ m::section-title current-section current-header))
            (list :div
                  (cons :attrs (pl:attributes node))
                  (cons :filename current-section))))
@@ -111,9 +136,9 @@
         ((and (str:starts-with-p "H" (str:upcase (pl:tag-name node)))
               (= (length (pl:tag-name node)) 2))
          (if (string= current-header "")
-             (setf current-header (pl:text node))
+             (setf current-header (jweb.framework::straight-text node))
              (setf current-header (str:concat current-header " "
-                                              (pl:text node))))
+                                              (jweb.framework::straight-text node))))
          (plain-tag node))
         (t (plain-tag node))))
 
@@ -128,25 +153,47 @@
   current-section)
 
 (defun* process-document ((name pathname))
-  (*let ((current-section pathname (merge-pathnames (pathname-name name) (thml-options-processed-dir thml-options)))
-         (source-file pathname (merge-pathnames name (thml-options-source-dir thml-options)))
+  (*let ((current-section pathname (merge-pathnames
+                                    (pathname-name name)
+                                    (thml-options-processed-dir thml-options)))
+         (source-file pathname (merge-pathnames
+                                name
+                                (thml-options-source-dir thml-options)))
          (document pl:node (get-document source-file))
          (body pl:node (get-body document))
          (head pl:node (get-head document))
-         (title string (pl:text (get-title head)))
-         (current-header string ""))
+         (title string (jweb.framework::straight-text (get-title head)))
+         (current-header string "")
+         (category symbol (theonly category
+                                   s.t.
+                                   (m::pre-resource-category name category)))
+         (base-url (book-base-url head))
+         (book-code (pl:text (book-id head))))
+    ;; With the atomic, we can revert most changes upon failure.
     (atomic
-     (create-resource source-file title)
-     (add-cur-section current-section source-file)
+     (++ m::resource source-file)
+     (++ m::resource-title source-file title)
+     (++ m::resource-ccel source-file base-url)
+     (let ((base-url (str:concat base-url book-code)))
+       (add-cur-section current-section source-file))
      (break-sections body)
-     (set-section-title current-section current-header)
-     (set-resource-prim-section source-file current-section)
-     (jweb.model::find-and-set-resource-category name source-file))
-    source-file))
+     ;; This section has the URL of the whole book since it's
+     ;; the whole document.
+     (++ m::section-ccel current-section base-url)
+     (++ m::section-title current-section current-header)
+     (++ m::resource-prim-section source-file current-section)
+     (++ m::resource-category source-file category))))
 
 (defun* (load-standard-docs -> null) ()
   (ref-tree::initialize-files)
   (withwriteaccess
-    (map-over-pre-resources #'process-document)))
+    (loop for (resource) s.t. (m::pre-resource resource)
+          do (process-document resource))))
 
 ;; (defvar loaded-docs (progn (load-standard-docs) t))
+(defun* (add-cur-section -> null) (current-section source-file &optional ((prior-section (or null pathname)) nil))
+  (atomic
+   (++ m::section current-section)
+   (++ m::resource-sections source-file current-section)
+   (when prior-section
+     (++ m::section-parent current-section prior-section))))

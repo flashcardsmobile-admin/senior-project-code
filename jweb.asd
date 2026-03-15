@@ -58,6 +58,7 @@
                              (:file "thml-preprocessor")
                              (:file "thml-renderer")
                              (:file "lang-verses")
+                             (:file "notes")
                              (:file "views")
 	                           (:file "web"))))
   :in-order-to ((test-op (test-op jweb-test))))

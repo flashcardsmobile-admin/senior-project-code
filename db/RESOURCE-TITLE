@@ -1,0 +1,95 @@
+
+((#P"/home/jackson/school/senior-project/framework/resources/mhcc.xml"
+  "Matthew Henry's Concise Commentary on the Bible 
+ ")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf01.xml"
+  "ANF01. The Apostolic Fathers with Justin Martyr and Irenaeus")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf02.xml"
+  "ANF02. Fathers of the Second Century: Hermas, Tatian, Athenagoras, Theophilus, and Clement of Alexandria (Entire)")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf03.xml"
+  "ANF03. Latin Christianity: Its Founder, Tertullian")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf04.xml"
+  "ANF04. Fathers of the Third Century: Tertullian, Part Fourth; Minucius Felix; Commodian; Origen, Parts First and Second")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf05.xml"
+  "ANF05. Fathers of the Third Century: Hippolytus,
+    Cyprian, Caius, Novatian, Appendix")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf06.xml"
+  "ANF06. Fathers of the Third Century: Gregory
+    Thaumaturgus, Dionysius the Great, Julius Africanus, Anatolius,
+    and Minor Writers, Methodius, Arnobius")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf07.xml"
+  "ANF07. Fathers of the Third and Fourth Centuries: Lactantius, Venantius, Asterius, Victorinus, Dionysius, Apostolic Teaching and Constitutions, Homily, and Liturgies")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf08.xml"
+  "ANF08. The Twelve Patriarchs, Excerpts and Epistles, The Clementia, Apocrypha, Decretals, Memoirs of Edessa and Syriac Documents, Remains of the First Age")
+ (#P"/home/jackson/school/senior-project/framework/resources/anf09.xml"
+  "ANF09. The Gospel of Peter, The Diatessaron of Tatian, The
+ Apocalypse of Peter, the Vision of Paul, The Apocalypse of the Virgin
+ and Sedrach, The Testament of Abraham, The Acts of Xanthippe and
+ Polyxena, The Narrative of Zosimus, The Apology of Aristides, The
+ Epistles of Clement (complete text), Origen's Commentary on John,
+ Books 1-10, and Commentary on Matthew, Books 1, 2, and
+ 10-14.")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf101.xml"
+  "NPNF1-01. The Confessions and Letters of St. Augustine, 
+with a Sketch of his Life and Work")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf102.xml"
+  "NPNF1-02. St. Augustine's City of God and Christian 
+Doctrine")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf103.xml"
+  "NPNF1-03. On the Holy Trinity; Doctrinal Treatises; Moral Treatises")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf104.xml"
+  "NPNF1-04. Augustine: The Writings Against the Manichaeans 
+and Against the Donatists")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf105.xml"
+  "NPNF1-05. St. Augustine: Anti-Pelagian Writings")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf106.xml"
+  "NPNF1-06. St. Augustine: Sermon on the 
+Mount; Harmony of the Gospels; Homilies on the Gospels")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf107.xml"
+  "NPNF1-07. St. Augustine: Homilies on the Gospel of John; 
+Homilies on the First Epistle of John; Soliloquies")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf108.xml"
+  "NPNF1-08. St. Augustine: Exposition on the Book of 
+Psalms")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf109.xml"
+  "NPNF1-09. St. Chrysostom: On the Priesthood; Ascetic Treatises; Select Homilies and Letters; Homilies on the Statutes")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf110.xml"
+  "NPNF1-10. St. Chrysostom: Homilies on the Gospel of Saint Matthew")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf111.xml"
+  "NPNF1-11. Saint Chrysostom: Homilies on the Acts of the Apostles and the Epistle to the Romans")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf112.xml"
+  "NPNF1-12. Saint Chrysostom: Homilies on the Epistles of Paul to the Corinthians")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf113.xml"
+  "NPNF1-13. Saint Chrysostom: Homilies on Galatians, Ephesians, Philippians, Colossians, Thessalonians, Timothy, Titus, and Philemon")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf114.xml"
+  "NPNF1-14. Saint Chrysostom: Homilies on the Gospel of St. John and the Epistle to the Hebrews")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf201.xml"
+  "NPNF2-01. Eusebius Pamphilius: Church History, Life of Constantine, Oration in Praise of Constantine")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf202.xml"
+  "NPNF2-02. Socrates and Sozomenus Ecclesiastical Histories")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf203.xml"
+  "NPNF2-03. Theodoret, Jerome, Gennadius, & Rufinus: Historical Writings")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf204.xml"
+  "NPNF2-04. Athanasius: Select Works and Letters")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf205.xml"
+  "NPNF2-05. Gregory of Nyssa: Dogmatic Treatises, Etc.")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf206.xml"
+  "NPNF2-06. Jerome: The Principal Works of St. Jerome")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf207.xml"
+  "NPNF2-07. Cyril of Jerusalem, Gregory Nazianzen")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf208.xml"
+  "NPNF2-08. Basil: Letters and Select Works")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf209.xml"
+  "NPNF2-09. Hilary of Poitiers, John of Damascus")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf210.xml"
+  "NPNF2-10. Ambrose: Selected Works and Letters")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf211.xml"
+  "NPNF-211. Sulpitius Severus, Vincent of Lerins, John Cassian")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf212.xml"
+  "NPNF-212. Leo the Great, Gregory the Great")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf213.xml"
+  "NPNF-213. Gregory the Great (II), Ephraim Syrus, Aphrahat")
+ (#P"/home/jackson/school/senior-project/framework/resources/npnf214.xml"
+  "NPNF2-14. The Seven Ecumenical Councils")
+ (#P"/home/jackson/school/senior-project/framework/resources/institutes.xml"
+  "The Institutes of the Christian Religion")) 

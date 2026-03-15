@@ -412,3 +412,27 @@
 
 (defun hard-reset-paths ()
   (setf *paths* nil))
+
+
+(defmacro do-subs (text &body replacements)
+  (let ((retval (gensym)))
+    `(let ((,retval ,text))
+       ,@(mapcar (lambda (r)
+                   `(setf ,retval
+                          (substitute ,(car r) ,(cadr r) ,retval)))
+                 replacements)
+       ,retval)))
+
+;; The following function was partially produced by Grok.
+;; The macro is to make the code less annoying.
+;; https://grok.com/share/bGVnYWN5_1b419c89-a5ce-4489-83f3-eca34429abb6
+(defun straight-text (node)
+  "Wrapper around plump:text that replaces common curly quotes with straight quotes."
+  (do-subs (plump:text node)
+    (#\' (code-char #x2019))
+    (#\' (code-char #x2018))
+    (#\" (code-char #x201D))
+    (#\" (code-char #x201C))
+    (#\- (code-char #x2014))
+    (#\- (code-char #x2013))
+    (#\Space (code-char #x00A0))))

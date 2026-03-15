@@ -158,3 +158,53 @@
 	       1
 	       1
 	       22)))
+
+(defmacro tnch-file (name)
+  (asdf:system-relative-pathname :jweb (str:concat "bibles/Tanach/Books/" name ".xml")))
+
+(defmacro tnch-files (num &body names)
+  `(book-case num
+     ,@(mapcar (lambda (name) `(tnch-file ,name)) names)))
+
+(defun num-to-tnch-file (num)
+  (declare (type fixnum num))
+  (declare (optimize (speed 3) (safety 0)))
+  (the (or pathname null)
+       (tnch-files num
+         "Genesis"
+         "Exodus"
+         "Leviticus"
+         "Numbers"
+         "Deuteronomy"
+         "Joshua"
+         "Judges"
+         "Ruth"
+         "Samuel_1"
+         "Samuel_2"
+         "Kings_1"
+         "Kings_2"
+         "Chronicles_1"
+         "Chronicles_2"
+         "Ezra"
+         "Nehemiah"
+         "Esther"
+         "Job"
+         "Psalms"
+         "Proverbs"
+         "Ecclesiastes"
+         "Song_of_Songs"
+         "Isaiah"
+         "Jeremiah"
+         "Lamentations"
+         "Ezekiel"
+         "Daniel"
+         "Amos"
+         "Obadiah"
+         "Jonah"
+         "Micah"
+         "Nahum"
+         "Habakkuk"
+         "Zephaniah"
+         "Haggai"
+         "Zechariah"
+         "Malachi")))
