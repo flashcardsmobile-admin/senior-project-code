@@ -15,7 +15,8 @@
 
 (def index (resources versions)
   (with-html
-    (:section :class (bs container-fluid row)
+    (:section :class (bs container-fluid ;row
+)
 	            (:header :class (bs text-center)
                        (:h2 "Select Document to View"))
 	            (:div :class (bs col-sm)
@@ -24,12 +25,13 @@
                               (:li (:a :href (str:concat "/bible/" version)
                                        version))]
                               versions)))
-              (:div :class (bs col-sm)
-                    (:h3 "Other Documents")
-                    (:ul :is "filter-ul"
-                         (clamp:map [destructuring-bind (title section) _
-                                    (:li (:a :href (section-url section) title))]
-                                    resources))))))
+;              (:div :class (bs col-sm)
+;                    (:h3 "Other Documents")
+;                    (:ul :is "filter-ul"
+;                         (clamp:map [destructuring-bind (title section) _
+;                                    (:li (:a :href (section-url section) title))]
+;                                    resources)))
+)))
 
 (def float-script (container-id head-id)
   ;; The following is adapted from: https://www.w3schools.com/howto/howto_js_draggable.asp
@@ -418,7 +420,7 @@
 
 (def settings (user)
   (with (target (ap5::theonly target s.t. (jweb.model::user-target user target) ifnone :new-tab)
-                dark-mode (ap5::theonly mode s.t. (jweb.model::user-dark-mode user mode) ifnone nil))
+                dark-mode (ap5::theonly mode s.t. (jweb.model::user-dark-mode user mode) ap5::ifnone nil))
     (with-html
       (:main :class "container"
              (:header (:h1 "Settings"))

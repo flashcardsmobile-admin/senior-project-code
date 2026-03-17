@@ -6,6 +6,10 @@
 ;; For the start/stop functions
 (defvar app (make-instance 'ningle:app))
 
+;; FROM GROK:
+;; Define the missing BSD sendfile flag (value is correct for OpenBSD)
+(defconstant woo.syscall::+sf-mnowait+ #x00000002)
+
 ;; Build changes
 (defun rl ()
   (ql:quickload :jweb))
@@ -691,7 +695,8 @@ display: none;
   `(with-html-stream
 	   (:doctype)
      (:html :data-bs-theme (if (and (cur-user) (ap5::theonly mode ap5::s.t.
-                                                             (jweb.model::user-dark-mode (cur-user) mode)))
+                                                             (jweb.model::user-dark-mode (cur-user) mode)
+                                                             ap5::ifnone nil))
                                "dark"
                                "light")
             (:meta :charset "utf-8")
@@ -749,7 +754,7 @@ display: none;
   `(:script (:raw (ps ,@content))))
 
 ;;; The start and stop functions.
-(defun make-server (&key (port 8080) (server :hunchentoot))
+(defun make-server (&key (port 8080) (server :hunchentoot) (debug t))
   (let ((curr-instance nil))
     (labels ((srv-start (port server)
                ;; One instance per lisp image.
@@ -758,11 +763,17 @@ display: none;
                (setf curr-instance
 	                   (clack:clackup
 	                    (lack:builder :session
-		                                (:static :path "/static/"
-				                                     :root (asdf:system-relative-pathname :jweb "static/"))
-		                                app)
+		                          (:static :path "/static/"
+				                   :root (asdf:system-relative-pathname :jweb "static/"))
+                                          (lambda (a)
+                                           (lambda (env)
+                                            (handler-case (funcall a env)
+                                             (error (e) (print e) '(500 () ("Internal Server Error"))))))
+                                          app)
 	                    :port port
-	                    :server server)))
+	                    :server server
+			    :debug debug))
+              (unless debug (loop (sleep 60))))
              (srv-stop ()
                (when curr-instance
                  (clack:stop curr-instance)

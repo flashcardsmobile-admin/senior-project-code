@@ -40,6 +40,7 @@
 	             "alexandria"
 	             "serapeum"
 	             "modf"
+"woo"
 	             "str")
   :components ((:module "src"
                 :serial t
