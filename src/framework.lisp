@@ -6,10 +6,6 @@
 ;; For the start/stop functions
 (defvar app (make-instance 'ningle:app))
 
-;; FROM GROK:
-;; Define the missing BSD sendfile flag (value is correct for OpenBSD)
-(defconstant woo.syscall::+sf-mnowait+ #x00000002)
-
 ;; Build changes
 (defun rl ()
   (ql:quickload :jweb))
@@ -584,10 +580,10 @@
 ;; 					                                    undefined))))))
 
 (defpsmacro setup-custom-el (name &optional (subclass '-h-t-m-l-element))
-  `(progn (defun ,name ()
-            (chain -reflect (construct ,subclass [] ,name)))
-          (setf (@ ,name prototype) (chain -object (create (@ ,subclass prototype))))
-          (setf (@ ,name prototype constructor) ,name)))
+  `(progn (ps:defun ,name ()
+            (ps:chain -reflect (construct ,subclass [] ,name)))
+          (ps:setf (@ ,name prototype) (chain -object (create (@ ,subclass prototype))))
+          (ps:setf (@ ,name prototype constructor) ,name)))
 
 
 ;; Adapted from something Grok gave me.
@@ -755,6 +751,8 @@ display: none;
 
 ;;; The start and stop functions.
 (defun make-server (&key (port 8080) (server :hunchentoot) (debug t))
+  "Create a new server \"object\".
+The \"object\" is a closure that takes the :start and :stop messages."
   (let ((curr-instance nil))
     (labels ((srv-start (port server)
                ;; One instance per lisp image.
@@ -778,57 +776,74 @@ display: none;
                (when curr-instance
                  (clack:stop curr-instance)
                  (setf curr-instance nil))))
-      (init-html-els)
       (dlambda
        (:start (&key (port port) (server server))
                (srv-start port server))
        (:stop () (srv-stop))))))
 
-(defun init-html-els ()
-  "Consider removing since it doesn't seem to have an effect."
-  (with-html
-      (:thml-div1
-       (:thml-div2
-        (:thml-div3
-         (:thml-pb)
-         (:thml-h1)
-         (:thml-h2)
-         (:thml-h3)
-         (:thml-h4)
-         (:thml-h5)
-         (:thml-h6)
-         (:thml-argument)
-         (:thml-scripCom)
-         (:thml-scripture)
-         (:thml-scripContext)
-         (:thml-sync)
-         (:thml-note)
-         (:thml-foreign)
-         (:thml-attr)
-         (:thml-unclear)
-         (:thml-citation)
-         (:thml-name)
-         (:thml-date)
-         (:thml-verse)
-         (:thml-insertIndex)
-         (:thml-electronicEdInfo)
-         (:thml-authorID)
-         (:thml-workID)
-         (:thml-versionID)
-         (:thml-bkgID)
-         (:thml-DC)
-         (:thml-l)
-         (:thml-hymn)
-         (:thml-meter)
-         (:thml-author)
-         (:thml-tune)
-         (:thml-composer)
-         (:thml-incipit)
-         (:thml-music)
-         (:thml-index)
-         (:thml-glossary)
-         (:thml-term)
-         (:thml-def)
-         (:thml-added)
-         (:thml-deleted)
-         (:thml-p))))))
+(defvar *restoring* nil)
+
+(let ((journal-lock (bt:make-lock))
+      (journal-path (asdf:system-relative-pathname :jweb "journal")))
+  (defun journal (data)
+    "Save a lisp expression to the journal.
+Ensure anything journaled is (read)-compatible."
+    (bt:with-lock-held (journal-lock)
+      (with-open-file (s journal-path :direction :output
+                                      :if-exists :append
+                                      :if-does-not-exist :create)
+        (print data s)
+        (finish-output s))))
+  (defun restore ()
+    "Restore a saved journal file.
+Takes a few minutes depending on the scale of the data. Faster than regenerating."
+    (bt:with-lock-held (journal-lock)
+      (let ((*restoring* t))
+        (with-open-file (s journal-path)
+          (atomic (loop for form = (ignore-errors (read s nil nil))
+                        while form
+                        do (if (eq (car form) 'ap5::++)
+                               (eval `(++ ,(symbol-relation (cadr form)) ,@(cddr form)))
+                               (eval `(-- ,(symbol-relation (cadr form)) ,@(cddr form)))))))))))
+
+(let ((map-lock (bt:make-lock))
+      ;; If a DBO gets GC'd, we want it gone.
+      (id-dbo (make-hash-table :weakness :value))
+      (dbo-id (make-hash-table :weakness :key)))
+  (defun id-dbo (id)
+    (bt:with-lock-held (map-lock)
+      (let ((dbo (or= (gethash id id-dbo)
+                      (make-dbobject))))
+        (setf (gethash dbo dbo-id) id)
+        dbo)))
+  (defun dbo-id (dbo)
+    (bt:with-lock-held (map-lock)
+      (let ((id (or= (gethash dbo dbo-id)
+                     (fuuid:make-v4-integer))))
+        (setf (gethash id id-dbo) dbo)
+        id))))
+
+(defmacro saver-automation (rel ap5op start)
+  "Generate an automation rule to save a specific form on a certain change event."
+  (*let ((argsyms list (loop repeat (relationarity (symbol-relation rel))
+                             nconc (list (gensym)))))
+    `(ap5::defautomation ,(intern (str:concat "save-" (symbol-name rel) (symbol-name ap5op)))
+         (,argsyms s.t. ,(if start
+                             `(Start (,rel ,@argsyms))
+                             `(Start (not (,rel ,@argsyms)))))
+       (lambda ,argsyms
+         ;; Prevents an infinite loop and recursive lock error.
+         (unless *restoring*
+           (journal (list ',ap5op ',rel ,@(mapcar
+                                           (lambda (arg)
+                                             (once-only (arg)
+                                               `(if (dbobject ,arg)
+                                                    `(id-dbo ,(dbo-id ,arg))
+                                                    `(cl-binary-store:restore
+                                                      ,(cl-binary-store:store nil ,arg)))))
+                                           argsyms))))))))
+
+(defmacro persist-rel (rel)
+  "Set up a relation's persistence automations."
+  `(progn (saver-automation ,rel ap5::++ t)
+          (saver-automation ,rel ap5::-- nil)))

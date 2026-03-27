@@ -40,13 +40,14 @@
 	             "alexandria"
 	             "serapeum"
 	             "modf"
-"woo"
+               "woo"
 	             "str")
   :components ((:module "src"
                 :serial t
                 :components ((:file "package")
 	                           (:file "helpers")
 	                           (:file "framework")
+	                           ;; (:file "persist")
 	                           (:file "bible-static-facts")
                              (:file "ref-tree")
                              (:file "relations")

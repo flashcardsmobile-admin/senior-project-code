@@ -1,6 +1,10 @@
 (defpackage :jweb.framework
-  (:use :cl :trivial-types :defstar)
+  (:use :cl :trivial-types :defstar :ap5)
   (:local-nicknames (#:t #:transducers))
+  (:shadowing-import-from "AP5" :compile
+                          :defmethod :defun
+                          :loop :++
+                          :abort :type)
   (:import-from :ningle #:*session*)
   (:import-from :modf #:modf)
   (:import-from :lack.util.writer-stream #:make-writer-stream)
@@ -39,6 +43,7 @@
            #:with-html
            #:awhen
            #:aif
+           #:persist-rel
            #:it
            #:make-server
            #:params
@@ -74,11 +79,12 @@
                           :abort :type)
   (:local-nicknames (#:ref-tree #:jweb.ref-tree)
                     (#:t #:transducers))
-  (:import-from :jweb.framework
+  (:import-from #:jweb.framework
                 #:awhen
                 #:aif
                 #:comptime
                 #:dlambda
+                #:persist-rel
                 #:it)
   (:export #:defcategories
            #:defresources

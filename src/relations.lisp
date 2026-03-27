@@ -1,35 +1,35 @@
 (in-package :jweb.model)
 
-(eval-when (:compile-toplevel :execute)
-  (defun rel-filename (rel-sym)
-    (asdf:system-relative-pathname
-     "jweb"
-     (make-pathname
-      :directory '(:relative "db")
-      :name (symbol-name rel-sym)))))
+;; (eval-when (:compile-toplevel :execute)
+;;   (defun rel-filename (rel-sym)
+;;     (asdf:system-relative-pathname
+;;      "jweb"
+;;      (make-pathname
+;;       :directory '(:relative "db")
+;;       :name (symbol-name rel-sym)))))
 
-(defvar persistence-funs '())
+;; (defvar persistence-funs '())
 
-(defmacro persist-rel (relname)
-  "Create a persistence chassis for a relation and return an object with
-load/save functionality."
-  (let ((filename (rel-filename relname)))
-    `(setf persistence-funs
-           (nconc persistence-funs
-                  (list (dlambda
-                         (:save () (with-open-file (s ,filename :direction :output :if-exists :supersede)
-                                     (print (listof ,relname) s)))
-                         (:load () (block nil
-                                     (with-open-file (s ,filename)
-                                       (set-listof ,relname (read s)))))))))))
+;; (defmacro persist-rel (relname)
+;;   "Create a persistence chassis for a relation and return an object with
+;; load/save functionality."
+;;   (let ((filename (rel-filename relname)))
+;;     `(setf persistence-funs
+;;            (nconc persistence-funs
+;;                   (list (dlambda
+;;                          (:save () (with-open-file (s ,filename :direction :output :if-exists :supersede)
+;;                                      (print (listof ,relname) s)))
+;;                          (:load () (block nil
+;;                                      (with-open-file (s ,filename)
+;;                                        (set-listof ,relname (read s)))))))))))
 
-(defun load-db-state ()
-  (atomic
-   (mapcar (lambda (f) (funcall f :load)) persistence-funs)))
+;; (defun load-db-state ()
+;;   (atomic
+;;    (mapcar (lambda (f) (funcall f :load)) persistence-funs)))
 
-(defun save-db-state ()
-  (mapcar (lambda (f) (funcall f :save)) persistence-funs)
-  '())
+;; (defun save-db-state ()
+;;   (mapcar (lambda (f) (funcall f :save)) persistence-funs)
+;;   '())
 
 (defrelation pre-resource
   :types (pathname))
